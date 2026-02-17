@@ -1,0 +1,26 @@
+# Default configuration for Lateral Project
+
+# Lane Detection Settings
+lane_detection:
+  model_type: "TUSIMPLE"  # Options: TUSIMPLE, CULANE
+  weights_path: "weights/lane_detection/tusimple_res18.pth"
+  confidence_threshold: 0.5
+  num_lanes: 4
+
+# 3D Detection Settings
+detection_3d:
+  enabled: false
+  model: "pv_rcnn"
+  weights_path: "weights/3d_detection/pv_rcnn_kitti.pth"
+
+# Dataset Settings
+dataset:
+  name: "kitti"
+  path: "data/kitti"
+  train_split: 0.8
+  
+# Output Settings
+output:
+  save_dir: "outputs"
+  save_visualizations: true
+  save_detections: true

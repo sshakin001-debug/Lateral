@@ -1,0 +1,6 @@
+# This directory contains pretrained model weights
+# Download weights using: python scripts/download_weights.py
+
+# Expected files:
+# - tusimple_res18.pth (Ultra-Fast Lane Detection for TUSIMPLE dataset)
+# - culane_res18.pth (Ultra-Fast Lane Detection for CULANE dataset)
