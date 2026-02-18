@@ -9,7 +9,8 @@ from enum import Enum
 from scipy.spatial.distance import cdist
 import csv
 import math
-from ultrafastLaneDetector.model import parsingNet
+from pathlib import Path
+from .model import parsingNet
 
 lane_colors = [(0,0,255),(0,255,0),(255,0,0),(0,255,255)]
 
@@ -28,6 +29,13 @@ class ModelType(Enum):
 class ModelConfig():
 
         def __init__(self, model_type):
+                # Handle both string and enum inputs
+                if isinstance(model_type, str):
+                    if model_type.upper() == 'TUSIMPLE' or model_type == '0':
+                        model_type = ModelType.TUSIMPLE
+                    else:
+                        model_type = ModelType.CULANE
+                
                 if model_type == ModelType.TUSIMPLE:
                         self.init_tusimple_config()
                 else:
@@ -129,63 +137,93 @@ class UltrafastLaneDetector():
         def write_lanes(self, lane_lists, csv_path):
                 # lane_lists = [leftx_list, lefty_list, rightx_list, righty_list]
                 
-                f = open(csv_path, 'w', newline="")
-                #print(lane_lists)
-                if len(lane_lists[0]) != 0 and len(lane_lists[1]) != 0 and len(lane_lists[2]) != 0 and len(lane_lists[3]) != 0:
-                        leftCoefficient = np.polyfit(lane_lists[1], lane_lists[0], 2) 
-                        rightCoefficient = np.polyfit(lane_lists[3], lane_lists[2], 2)
+                # Skip if csv_path is None or lane_lists is empty
+                if csv_path is None:
+                    return
+                
+                if not lane_lists or len(lane_lists) < 4:
+                    return
+                
+                # Check if we have enough points for polyfit (need at least 3)
+                has_left = len(lane_lists[0]) >= 3 and len(lane_lists[1]) >= 3
+                has_right = len(lane_lists[2]) >= 3 and len(lane_lists[3]) >= 3
+                
+                if not (has_left and has_right):
+                    # Not enough points, write empty rows
+                    with open(csv_path, 'w', newline="") as f:
                         wr = csv.writer(f)
-                        wr.writerow(["Left_Lane_Coefficient", leftCoefficient[0], leftCoefficient[1], leftCoefficient[2]])
-                        wr.writerow(["Right_Lane_Coefficient", rightCoefficient[0], rightCoefficient[1], rightCoefficient[2]])
-                        
-                        a = leftCoefficient[0] - rightCoefficient[0]
-                        b = leftCoefficient[1] - rightCoefficient[1]
-                        c = leftCoefficient[2] - rightCoefficient[2]
-                        
-                        # calculate the meeting points between left lanes and right lanes
-                        if a != 0 and b * b - 4 * a * c >= 0:  # case for a != 0
-                                        contact_y = (-b - math.sqrt(b * b - 4 * a * c)) / (2 * a)
-                                        contact_y = int(contact_y)
-                                        contact_y = contact_y + 20
-                        else:  # case for a == 0. Just finding contact point of lines
-                                        contact_y = -c / b
-                                        contact_y = int(contact_y)
-                                        contact_y = contact_y + 20
-                        contact_y = abs(contact_y)
-                        contact_x = leftCoefficient[0] * math.pow(contact_y, 2) + leftCoefficient[1] * contact_y + leftCoefficient[2]
-                        #ploty = np.linspace(contact_y, frame.shape[0] - 1, frame.shape[0] - contact_y)  # y좌표에 대해서 상위 1/3 지점 부터 최하단 까지 그래프를 그리기위한 코드
-                        #1280 720
-                        ploty = np.linspace(contact_y, self.cfg.img_h - 1, self.cfg.img_h - contact_y)  # y좌표에 대해서 상위 1/3 지점 부터 최하단 까지 그래프를 그리기위한 코드
-                        
-                        left_fitx = leftCoefficient[0] * ploty ** 2 + leftCoefficient[1] * ploty + leftCoefficient[2]  # 방정식에 대한 x 값을 얻어오기 위한 코드
-                        right_fitx = rightCoefficient[0] * ploty ** 2 + rightCoefficient[1] * ploty + rightCoefficient[2]
-                        
-                        # lists to save pixel value on equated lanes
-                        leftEquationx = []
-                        leftEquationy = []
-                        rightEquationx = []
-                        rightEquationy = []
-                        for ii, x in enumerate(left_fitx):
-                                q = (int(x), int(ii + contact_y))  # 상위 1/3 지점부터 그래프를 그리기 시작하므로 인덱스에 해당하는 ii 에 그만큼 추가해준다.
-                                self.leftPlotlist.append(q)
-                                if (x >= 0):
-                                                #k.append(q)
-                                                leftEquationx.append(q[0])
-                                                leftEquationy.append(q[1])
-                        for ii, x in enumerate(right_fitx):
-                                q = (int(x), int(ii + contact_y))
-                                self.rightPlotlist.append(q)
-                                if (x >= 0):
-                                                #l.append(q)
-                                                rightEquationx.append(q[0])
-                                                rightEquationy.append(q[1])
-                wr.writerow(leftEquationx)
-                wr.writerow(leftEquationy)
-                wr.writerow(rightEquationx)
-                wr.writerow(rightEquationy)
-                f.close
+                        wr.writerow(["Left_Lane_Coefficient", 0, 0, 0])
+                        wr.writerow(["Right_Lane_Coefficient", 0, 0, 0])
+                    return
+                
+                try:
+                    leftCoefficient = np.polyfit(lane_lists[1], lane_lists[0], 2) 
+                    rightCoefficient = np.polyfit(lane_lists[3], lane_lists[2], 2)
+                except Exception:
+                    # Polyfit failed, write empty rows
+                    with open(csv_path, 'w', newline="") as f:
+                        wr = csv.writer(f)
+                        wr.writerow(["Left_Lane_Coefficient", 0, 0, 0])
+                        wr.writerow(["Right_Lane_Coefficient", 0, 0, 0])
+                    return
+                
+                with open(csv_path, 'w', newline="") as f:
+                    wr = csv.writer(f)
+                    wr.writerow(["Left_Lane_Coefficient", leftCoefficient[0], leftCoefficient[1], leftCoefficient[2]])
+                    wr.writerow(["Right_Lane_Coefficient", rightCoefficient[0], rightCoefficient[1], rightCoefficient[2]])
+                    
+                    a = leftCoefficient[0] - rightCoefficient[0]
+                    b = leftCoefficient[1] - rightCoefficient[1]
+                    c = leftCoefficient[2] - rightCoefficient[2]
+                    
+                    # calculate the meeting points between left lanes and right lanes
+                    if a != 0 and b * b - 4 * a * c >= 0:  # case for a != 0
+                        contact_y = (-b - math.sqrt(b * b - 4 * a * c)) / (2 * a)
+                        contact_y = int(contact_y)
+                        contact_y = contact_y + 20
+                    else:  # case for a == 0. Just finding contact point of lines
+                        if b != 0:
+                            contact_y = -c / b
+                            contact_y = int(contact_y)
+                            contact_y = contact_y + 20
+                        else:
+                            contact_y = 0
+                    contact_y = abs(contact_y)
+                    contact_x = leftCoefficient[0] * math.pow(contact_y, 2) + leftCoefficient[1] * contact_y + leftCoefficient[2]
+                    ploty = np.linspace(contact_y, self.cfg.img_h - 1, self.cfg.img_h - contact_y) if contact_y < self.cfg.img_h else np.array([0])
+                    
+                    left_fitx = leftCoefficient[0] * ploty ** 2 + leftCoefficient[1] * ploty + leftCoefficient[2]
+                    right_fitx = rightCoefficient[0] * ploty ** 2 + rightCoefficient[1] * ploty + rightCoefficient[2]
+                    
+                    # lists to save pixel value on equated lanes
+                    leftEquationx = []
+                    leftEquationy = []
+                    rightEquationx = []
+                    rightEquationy = []
+                    for ii, x in enumerate(left_fitx):
+                        q = (int(x), int(ii + contact_y))
+                        self.leftPlotlist.append(q)
+                        if (x >= 0):
+                            leftEquationx.append(q[0])
+                            leftEquationy.append(q[1])
+                    for ii, x in enumerate(right_fitx):
+                        q = (int(x), int(ii + contact_y))
+                        self.rightPlotlist.append(q)
+                        if (x >= 0):
+                            rightEquationx.append(q[0])
+                            rightEquationy.append(q[1])
+                    wr.writerow(leftEquationx)
+                    wr.writerow(leftEquationy)
+                    wr.writerow(rightEquationx)
+                    wr.writerow(rightEquationy)
 
         def prepare_input(self, img):
+                # If img is a string or Path, load the image first
+                if isinstance(img, (str, Path)):
+                    img = cv2.imread(str(img))
+                    if img is None:
+                        raise ValueError(f"Could not load image: {img}")
+                
                 # Transform the image for inference
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 img_pil = Image.fromarray(img)
@@ -255,7 +293,7 @@ class UltrafastLaneDetector():
                                 lanes_detected.append(False)
 
                         lanes_points.append(lane_points)
-                return np.array(lanes_points), np.array(lanes_detected), [leftx, lefty, rightx, righty]
+                return np.array(lanes_points, dtype=object), np.array(lanes_detected), [leftx, lefty, rightx, righty]
 
         @staticmethod
         def draw_lanes(input_img, lanes_points, lanes_detected, cfg, draw_points, leftplotlist, rightplotlist):

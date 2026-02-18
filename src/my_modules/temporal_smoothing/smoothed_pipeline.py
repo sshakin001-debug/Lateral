@@ -1,6 +1,14 @@
 import numpy as np
 import os
 import sys
+from pathlib import Path
+
+# Add src to path for imports
+CURRENT_FILE = Path(__file__).resolve()
+PROJECT_ROOT = CURRENT_FILE.parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.paths import get_weights_path
 from ..custom_pipeline import MyEnhancedPipeline
 from .lane_smoother import MovingAverageLaneSmoother
 from .kalman_3d import SimpleKalman3DTracker
@@ -17,6 +25,7 @@ class SmoothedVideoPipeline:
                  weights_path=None,
                  use_3d_tracker=True,
                  use_lane_smoother=True,
+                 lane_smoother_type='moving_average',
                  tracker_max_age=2,
                  lane_smoother_window=5,
                  lane_smoother_alpha=0.3):
@@ -24,15 +33,21 @@ class SmoothedVideoPipeline:
         Initialize the smoothed pipeline.
         
         Args:
-            weights_path: Path to model weights (passed to base pipeline)
+            weights_path: Path to model weights (passed to base pipeline).
+                         If None, uses default path from utils.paths.
             use_3d_tracker: Enable/disable 3D object tracking
             use_lane_smoother: Enable/disable lane smoothing
+            lane_smoother_type: Type of lane smoother ('moving_average' or 'ema')
             tracker_max_age: Frames to keep track without detection
             lane_smoother_window: Frames for moving average
             lane_smoother_alpha: Smoothing factor for EMA
         """
+        # Auto-detect weights path if not provided
+        if weights_path is None:
+            weights_path = get_weights_path("lane_detection", "tusimple_res18.pth")
+        
         # Initialize the base pipeline (your existing class)
-        self.base_pipeline = MyEnhancedPipeline(weights_path)
+        self.base_pipeline = MyEnhancedPipeline(str(weights_path))
         
         # Initialize temporal modules
         self.use_3d_tracker = use_3d_tracker

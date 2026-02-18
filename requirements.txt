@@ -1,26 +1,86 @@
-# Core
+# =============================================================================
+# CORE DEEP LEARNING
+# =============================================================================
 torch>=1.7.0
 torchvision>=0.8.0
 numpy>=1.19.0
-opencv-python>=4.5.0
 
-# 3D & Geometry
+# =============================================================================
+# COMPUTER VISION & IMAGE PROCESSING
+# =============================================================================
+opencv-python>=4.5.0
+opencv-contrib-python>=4.5.0  # Additional OpenCV modules
+Pillow>=8.0.0                  # Image processing
+imageio>=2.9.0                 # Image I/O
+
+# =============================================================================
+# 3D GEOMETRY & POINT CLOUDS
+# =============================================================================
 open3d>=0.13.0
 shapely>=1.7.0
 scipy>=1.5.0
-scikit-learn>=0.24.0
 
-# Data
-kagglehub>=0.1.0
+# =============================================================================
+# MACHINE LEARNING & DATA SCIENCE
+# =============================================================================
+scikit-learn>=0.24.0
 pandas>=1.1.0
 matplotlib>=3.3.0
+seaborn>=0.11.0                # Statistical visualization
 
-# ROS (optional)
-# rospy
+# =============================================================================
+# DATA DOWNLOAD & MANAGEMENT
+# =============================================================================
+kagglehub>=0.1.0
+gdown>=4.6.0                   # Google Drive downloads
+requests>=2.25.0               # HTTP requests
+tqdm>=4.60.0                   # Progress bars
 
-# Development
-jupyterlab
-pytest
-black
-flake8
-gdown
+# =============================================================================
+# CONFIGURATION & UTILITIES
+# =============================================================================
+PyYAML>=5.4.0                  # YAML config files
+python-dotenv>=0.19.0          # Environment variables
+pathlib>=1.0.0; python_version < "3.4"  # Backport for older Python
+
+# =============================================================================
+# JUPYTER & DEVELOPMENT
+# =============================================================================
+jupyterlab>=3.0.0
+notebook>=6.4.0
+ipywidgets>=7.6.0              # Interactive widgets
+pytest>=6.2.0                  # Testing
+black>=21.0.0                  # Code formatting
+flake8>=3.9.0                  # Linting
+
+# =============================================================================
+# OPTIONAL: ROS (Robot Operating System)
+# Un-comment if using ROS visualization
+# =============================================================================
+# rospy; platform_system != "Windows"
+# std-msgs
+# sensor-msgs
+# geometry-msgs
+# visualization-msgs
+
+# =============================================================================
+# OPTIONAL: ADVANCED 3D DETECTION (MMDetection3D)
+# Un-comment if using PV-RCNN from MMDetection3D
+# =============================================================================
+# openmim>=0.3.0
+# mmcv-full>=2.0.0
+# mmdet>=3.0.0
+# mmdet3d>=1.1.0
+
+# =============================================================================
+# OPTIONAL: CUDA (if using GPU)
+# Replace torch lines above with:
+# torch==1.7.1+cu110 -f https://download.pytorch.org/whl/torch_stable.html
+# torchvision==0.8.2+cu110 -f https://download.pytorch.org/whl/torch_stable.html
+# =============================================================================
+
+# =============================================================================
+# WINDOWS-SPECIFIC (if needed)
+# =============================================================================
+# pywin32>=227; platform_system == "Windows"
+# colorama>=0.4.4; platform_system == "Windows"
