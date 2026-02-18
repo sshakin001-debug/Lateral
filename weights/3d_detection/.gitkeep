@@ -1,0 +1,2 @@
+# This file keeps the 3d_detection directory in git
+# Place model weights for 3D detection (e.g., pv_rcnn_kitti.pth) here

@@ -10,8 +10,8 @@ venv/
 
 # Data & Weights (large files)
 data/
-weights/*.pth
-weights/*.pkl
+weights/**/*.pth
+weights/**/*.pkl
 
 # IDE
 .vscode/
